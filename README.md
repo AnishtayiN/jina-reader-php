@@ -1,55 +1,63 @@
-# Jina AI Reader - PHP Clone
+# Jina Reader - Web to Markdown
 
-تبدیل هر صفحه وب به Markdown تمیز با PHP، مشابه [r.jina.ai](https://r.jina.ai).
+Convert any webpage to clean Markdown instantly - no server needed!
 
-## ✨ امکانات
-- تبدیل HTML به Markdown تمیز
-- استخراج عنوان و زمان انتشار
-- پشتیبانی از UTF-8 و زبان فارسی
-- دو حالت اجرا: وب‌سرور و خط فرمان
+**[Live Demo](https://anishtayin.github.io/jina-reader-php)**
 
-## 🚀 استفاده
+---
 
-### حالت وب‌سرور (index.php)
-فایل `index.php` را در دایرکتوری وب‌سرور خود قرار دهید و با دستور زیر اجرا کنید:
+## Features
 
-```bash
-php -S localhost:8000 -t .
+- Clean HTML to Markdown conversion
+- Full UTF-8 and Persian support
+- No server needed - fully client-side
+- One-click copy to clipboard
+- Download as .md file
+- Modern dark UI
+- Mobile responsive
+
+---
+
+## Usage
+
+### Online
+
+Visit: **https://anishtayin.github.io/jina-reader-php**
+
+Enter URL and click Convert!
+
+### Offline
+
+1. Download `index.html`
+2. Open in any browser (Chrome, Firefox, Edge, ...)
+3. Enter URL and click Convert!
+
+### Direct API
+
+Use Jina Reader API directly:
+
+```
+GET https://r.jina.ai/YOUR_URL
 ```
 
-سپس در مرورگر آدرس زیر را باز کنید:
-
+Example:
 ```
-http://localhost:8000/?url=https://example.com
-```
-
-یا از طریق API:
-
-```bash
-curl "http://localhost:8000/index.php?url=https://example.com"
+https://r.jina.ai/https://en.wikipedia.org/wiki/Persian_literature
 ```
 
-### حالت خط فرمان (cli.php)
-```bash
-php cli.php https://example.com
-```
+---
 
-## 📄 نمونه خروجی
-```
-Title: Example Domain
-URL Source: https://example.com/
-Published Time: Wed, 12 Aug 2026 20:15:57 GMT
-Markdown Content:
-This domain is for use in documentation examples...
-```
+## Output
 
-## 📁 ساختار فایل‌ها
-```
-jina-reader-php/
-├── index.php    # وب‌سرور + فرم وب
-├── cli.php      # خط فرمان
-└── README.md    # این فایل
-```
+After conversion you can:
+- **Copy** to clipboard
+- **Download** as `article.md`
+- Use directly!
 
-## 📜 لایسنس
-MIT - آزاد برای استفاده و تغییر
+---
+
+## License
+
+MIT - free to use and modify
+
+Made with love by [AnishtayiN](https://github.com/AnishtayiN)
