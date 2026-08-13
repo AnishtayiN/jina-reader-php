@@ -1,76 +1,362 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jina Reader</title>
+    <title>Jina Reader — Web to Markdown</title>
+    <meta name="description" content="Convert any web page into clean, readable Markdown instantly. No API key, no setup — just a URL.">
     <style>
-        *{box-sizing:border-box;margin:0;padding:0}
-        body{font-family:Segoe UI,Tahoma,sans-serif;background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);min-height:100vh;color:#e0e0e0;padding:2rem 1rem}
-        .container{max-width:900px;margin:0 auto}
-        h1{text-align:center;font-size:2.5rem;margin-bottom:.5rem;background:linear-gradient(90deg,#00d2ff,#3a7bd5);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-        .subtitle{text-align:center;color:#888;margin-bottom:2rem}
-        .card{background:rgba(255,255,255,.05);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:2rem;margin-bottom:1.5rem}
-        label{display:block;margin-bottom:.5rem;font-weight:bold}
-        .input-row{display:flex;gap:.5rem}
-        input[type=url]{flex:1;padding:.9rem 1rem;font-size:1rem;background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.2);border-radius:8px;color:#fff;direction:ltr;text-align:left}
-        input[type=url]:focus{outline:none;border-color:#3a7bd5}
-        button{padding:.9rem 1.5rem;font-size:1rem;background:linear-gradient(90deg,#00d2ff,#3a7bd5);color:#fff;border:none;border-radius:8px;cursor:pointer;font-weight:bold}
-        button:hover{opacity:.9}button:disabled{opacity:.5;cursor:not-allowed}
-        .output{background:#0a0a0a;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:1.5rem;white-space:pre-wrap;word-wrap:break-word;font-family:Courier New,monospace;font-size:.9rem;color:#b8f2e6;max-height:600px;overflow-y:auto;direction:ltr;text-align:left;display:none}
-        .toolbar{display:flex;gap:.5rem;margin-bottom:.75rem}
-        .toolbar button{padding:.5rem 1rem;font-size:.85rem}
-        .examples{margin-top:1rem}
-        .examples a{color:#00d2ff;text-decoration:none;margin-left:1rem;cursor:pointer}
-        .examples a:hover{text-decoration:underline}
-        .error{color:#ff6b6b;margin-top:.75rem}
-        footer{text-align:center;margin-top:2rem;color:#666}
-        footer a{color:#00d2ff;text-decoration:none}
+        :root {
+            --bg: #0b0f1a;
+            --card: rgba(255,255,255,.04);
+            --border: rgba(255,255,255,.09);
+            --text: #e6edf3;
+            --muted: #8b949e;
+            --accent1: #00d2ff;
+            --accent2: #7b5cff;
+            --danger: #ff6b6b;
+            --success: #3fb950;
+            --radius: 14px;
+            --mono: "SF Mono", "JetBrains Mono", "Fira Code", Consolas, monospace;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background:
+                radial-gradient(900px 500px at 10% -10%, rgba(123,92,255,.25), transparent 60%),
+                radial-gradient(800px 500px at 90% 0%, rgba(0,210,255,.18), transparent 55%),
+                var(--bg);
+            min-height: 100vh;
+            color: var(--text);
+            padding: 3rem 1.25rem;
+            line-height: 1.5;
+        }
+        .container { max-width: 860px; margin: 0 auto; }
+        .hero { text-align: center; margin-bottom: 2.25rem; }
+        .badge {
+            display: inline-block;
+            font-size: .78rem;
+            padding: .28rem .7rem;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: rgba(255,255,255,.03);
+            color: var(--muted);
+            margin-bottom: 1rem;
+        }
+        h1 {
+            font-size: clamp(2.1rem, 6vw, 3.2rem);
+            font-weight: 800;
+            letter-spacing: -1px;
+            background: linear-gradient(90deg, var(--accent1), var(--accent2));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .subtitle { color: var(--muted); margin-top: .5rem; font-size: 1.05rem; }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+        }
+        .input-row { display: flex; gap: .6rem; }
+        #url {
+            flex: 1;
+            padding: .95rem 1rem;
+            font-size: 1rem;
+            font-family: var(--mono);
+            background: rgba(0,0,0,.35);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            transition: border-color .2s, box-shadow .2s;
+        }
+        #url:focus { outline: none; border-color: var(--accent2); box-shadow: 0 0 0 3px rgba(123,92,255,.2); }
+        #goBtn {
+            padding: .95rem 1.4rem;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            background: linear-gradient(90deg, var(--accent1), var(--accent2));
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: opacity .15s, transform .1s;
+        }
+        #goBtn:hover { opacity: .88; }
+        #goBtn:active { transform: scale(.98); }
+        #goBtn:disabled { opacity: .5; cursor: not-allowed; }
+
+        .examples { margin-top: .9rem; font-size: .85rem; color: var(--muted); }
+        .examples a {
+            color: var(--accent1);
+            text-decoration: none;
+            cursor: pointer;
+            margin-left: .6rem;
+        }
+        .examples a:hover { text-decoration: underline; }
+
+        .skeleton { display: none; margin-top: 1rem; }
+        .skeleton.active { display: block; }
+        .sk-line {
+            height: 12px;
+            border-radius: 6px;
+            margin-bottom: .6rem;
+            background: linear-gradient(90deg, rgba(255,255,255,.05) 25%, rgba(255,255,255,.14) 50%, rgba(255,255,255,.05) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.2s infinite;
+        }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        .toolbar { display: flex; gap: .5rem; align-items: center; margin-bottom: .75rem; flex-wrap: wrap; }
+        .toolbar .spacer { flex: 1; }
+        .toolbar button {
+            padding: .5rem .95rem;
+            font-size: .85rem;
+            font-weight: 600;
+            color: var(--text);
+            background: rgba(255,255,255,.06);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background .15s;
+        }
+        .toolbar button:hover { background: rgba(255,255,255,.12); }
+
+        #output {
+            display: none;
+            background: #05070d;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.25rem;
+            font-family: var(--mono);
+            font-size: .88rem;
+            color: #c9d1d9;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 480px;
+            overflow-y: auto;
+        }
+        #resultCard { display: none; margin-top: 1.25rem; }
+        #resultCard.visible { display: block; }
+
+        .history { margin-top: 1.25rem; }
+        .history h3 { font-size: .85rem; color: var(--muted); margin-bottom: .6rem; text-transform: uppercase; letter-spacing: .05em; }
+        .history-list { display: flex; flex-wrap: wrap; gap: .5rem; }
+        .hist-chip {
+            font-size: .8rem;
+            font-family: var(--mono);
+            color: var(--accent1);
+            background: rgba(0,210,255,.08);
+            border: 1px solid rgba(0,210,255,.18);
+            padding: .35rem .75rem;
+            border-radius: 999px;
+            cursor: pointer;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .hist-chip:hover { background: rgba(0,210,255,.16); }
+
+        #toast {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: #161b26;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: .7rem 1.2rem;
+            border-radius: 10px;
+            font-size: .9rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .25s, transform .25s;
+            z-index: 50;
+        }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        #error {
+            display: none;
+            margin-top: .9rem;
+            color: var(--danger);
+            font-size: .9rem;
+        }
+        footer { text-align: center; margin-top: 2.5rem; color: var(--muted); font-size: .88rem; }
+        footer a { color: var(--accent1); text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Jina Reader</h1>
-        <p class="subtitle">Convert any web page to clean Markdown</p>
+        <div class="hero">
+            <span class="badge">✨ No API key · No setup · 100% free</span>
+            <h1>Jina Reader</h1>
+            <p class="subtitle">Convert any web page into clean Markdown — instantly.</p>
+        </div>
+
         <div class="card">
-            <label for="url">URL</label>
             <div class="input-row">
-                <input type="url" id="url" placeholder="https://example.com">
-                <button id="goBtn" onclick="fetchMarkdown()">Convert</button>
+                <input type="url" id="url" placeholder="https://example.com" autocomplete="off" spellcheck="false">
+                <button id="goBtn">Convert</button>
             </div>
             <div class="examples">
-                Examples:
-                <a onclick="setUrl('https://en.wikipedia.org/wiki/Main_Page')">Wikipedia</a>
-                <a onclick="setUrl('https://github.com')">GitHub</a>
-                <a onclick="setUrl('https://news.ycombinator.com')">HN</a>
+                Try:
+                <a data-url="https://en.wikipedia.org/wiki/Markdown">Wikipedia</a>
+                <a data-url="https://github.com">GitHub</a>
+                <a data-url="https://news.ycombinator.com">Hacker News</a>
             </div>
-            <div id="error" class="error"></div>
+            <div id="error"></div>
         </div>
-        <div class="card" id="resultCard" style="display:none">
+
+        <div class="skeleton" id="skeleton">
+            <div class="sk-line" style="width:40%"></div>
+            <div class="sk-line" style="width:100%"></div>
+            <div class="sk-line" style="width:90%"></div>
+            <div class="sk-line" style="width:100%"></div>
+            <div class="sk-line" style="width:55%"></div>
+        </div>
+
+        <div class="card" id="resultCard">
             <div class="toolbar">
-                <button onclick="copyOutput()">Copy</button>
-                <button onclick="downloadOutput()">Download</button>
-                <button onclick="clearOutput()">Clear</button>
+                <button id="copyBtn">📋 Copy</button>
+                <button id="downloadBtn">⬇ Download .md</button>
+                <div class="spacer"></div>
+                <button id="clearBtn">✕ Clear</button>
             </div>
-            <pre class="output" id="output" style="display:block"></pre>
+            <pre id="output"></pre>
         </div>
-        <footer>Made with love by <a href="https://github.com/AnishtayiN">AnishtayiN</a></footer>
+
+        <div class="history" id="historyWrap" hidden>
+            <h3>Recent</h3>
+            <div class="history-list" id="historyList"></div>
+        </div>
+
+        <footer>
+            Powered by <a href="https://r.jina.ai" target="_blank" rel="noopener">r.jina.ai</a> ·
+            <a href="https://github.com/AnishtayiN/jina-reader-php" target="_blank" rel="noopener">GitHub</a>
+        </footer>
     </div>
+
+    <div id="toast"></div>
+
     <script>
-        const API="https://r.jina.ai/";
-        function setUrl(u){document.getElementById("url").value=u}
-        async function fetchMarkdown(){
-            const u=document.getElementById("url").value.trim(),e=document.getElementById("error"),o=document.getElementById("output"),c=document.getElementById("resultCard"),b=document.getElementById("goBtn");
-            e.textContent="";if(!u){e.textContent="Enter URL";return}
-            try{new URL(u)}catch{e.textContent="Invalid URL";return}
-            b.disabled=true;b.textContent="...";c.style.display="block";o.textContent="Loading...";
-            try{const r=await fetch(API+u,{headers:{Accept:"text/markdown"}});if(!r.ok)throw new Error("HTTP "+r.status);o.textContent=await r.text()}
-            catch(x){o.textContent="Error: "+x.message}
-            finally{b.disabled=false;b.textContent="Convert"}}
-        function copyOutput(){navigator.clipboard.writeText(document.getElementById("output").textContent).then(()=>alert("Copied!"))}
-        function downloadOutput(){const t=document.getElementById("output").textContent,b=new Blob([t],{type:"text/markdown"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="article.md";a.click()}
-        function clearOutput(){document.getElementById("output").textContent="";document.getElementById("resultCard").style.display="none"}
-        document.getElementById("url").addEventListener("keypress",e=>{if(e.key==="Enter")fetchMarkdown()})
+        const API = "https://r.jina.ai/";
+        const HIST_KEY = "jina_reader_history";
+        const urlInput = document.getElementById("url");
+        const goBtn = document.getElementById("goBtn");
+        const output = document.getElementById("output");
+        const resultCard = document.getElementById("resultCard");
+        const skeleton = document.getElementById("skeleton");
+        const errorBox = document.getElementById("error");
+        const toast = document.getElementById("toast");
+        const historyWrap = document.getElementById("historyWrap");
+        const historyList = document.getElementById("historyList");
+
+        function toast(msg) {
+            toast.textContent = msg;
+            toast.classList.add("show");
+            clearTimeout(toast._t);
+            toast._t = setTimeout(() => toast.classList.remove("show"), 2000);
+        }
+
+        function getHistory() {
+            try { return JSON.parse(localStorage.getItem(HIST_KEY)) || []; }
+            catch { return []; }
+        }
+        function setHistory(list) {
+            localStorage.setItem(HIST_KEY, JSON.stringify(list.slice(0, 8)));
+        }
+        function renderHistory() {
+            const list = getHistory();
+            if (!list.length) { historyWrap.hidden = true; return; }
+            historyWrap.hidden = false;
+            historyList.innerHTML = "";
+            list.forEach(u => {
+                const chip = document.createElement("span");
+                chip.className = "hist-chip";
+                chip.textContent = u;
+                chip.title = u;
+                chip.onclick = () => { urlInput.value = u; fetchMarkdown(); };
+                historyList.appendChild(chip);
+            });
+        }
+
+        function setError(msg) {
+            if (msg) { errorBox.textContent = msg; errorBox.style.display = "block"; }
+            else { errorBox.textContent = ""; errorBox.style.display = "none"; }
+        }
+
+        async function fetchMarkdown() {
+            const u = urlInput.value.trim();
+            setError("");
+            if (!u) { setError("Please enter a URL."); return; }
+            let parsed;
+            try { parsed = new URL(u); } catch { setError("That doesn't look like a valid URL."); return; }
+
+            goBtn.disabled = true;
+            goBtn.textContent = "Converting…";
+            skeleton.classList.add("active");
+            resultCard.classList.remove("visible");
+
+            try {
+                const res = await fetch(API + u, { headers: { "Accept": "text/markdown" } });
+                if (!res.ok) throw new Error("HTTP " + res.status);
+                output.textContent = await res.text();
+                resultCard.classList.add("visible");
+                saveHistory(u);
+            } catch (err) {
+                setError("Failed to fetch: " + err.message);
+            } finally {
+                goBtn.disabled = false;
+                goBtn.textContent = "Convert";
+                skeleton.classList.remove("active");
+            }
+        }
+
+        function saveHistory(u) {
+            const list = getHistory().filter(x => x !== u);
+            list.unshift(u);
+            setHistory(list);
+            renderHistory();
+        }
+
+        document.getElementById("copyBtn").onclick = async () => {
+            try {
+                await navigator.clipboard.writeText(output.textContent);
+                toast("Copied to clipboard ✓");
+            } catch {
+                toast("Copy failed — select & copy manually");
+            }
+        };
+
+        document.getElementById("downloadBtn").onclick = () => {
+            const blob = new Blob([output.textContent], { type: "text/markdown" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = (urlInput.value.trim().replace(/https?:\/\//, "").replace(/[^\w.-]+/g, "_") || "article") + ".md";
+            a.click();
+            URL.revokeObjectURL(a.href);
+            toast("Downloading…");
+        };
+
+        document.getElementById("clearBtn").onclick = () => {
+            output.textContent = "";
+            resultCard.classList.remove("visible");
+        };
+
+        goBtn.onclick = fetchMarkdown;
+        urlInput.addEventListener("keydown", e => { if (e.key === "Enter") fetchMarkdown(); });
+        document.querySelectorAll(".examples a[data-url]").forEach(a => {
+            a.onclick = () => { urlInput.value = a.dataset.url; fetchMarkdown(); };
+        });
+
+        renderHistory();
     </script>
 </body>
 </html>
