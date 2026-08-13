@@ -1,60 +1,49 @@
 # Jina AI Reader - PHP Clone
 
-یک کلون ساده از [r.jina.ai](https://r.jina.ai) که هر صفحه وب را به Markdown تمیز تبدیل می‌کند.
+تبدیل هر صفحه وب به Markdown تمیز با PHP، مشابه [r.jina.ai](https://r.jina.ai).
 
-## ویژگی‌ها
+## ✨ امکانات
 - تبدیل HTML به Markdown تمیز
-- استخراج عنوان صفحه
-- پشتیبانی از UTF-8 و فارسی
-- دو حالت: وب‌سرور و خط فرمان (CLI)
+- استخراج عنوان و زمان انتشار
+- پشتیبانی از UTF-8 و زبان فارسی
+- دو حالت اجرا: وب‌سرور و خط فرمان
 
-## نصب
+## 🚀 استفاده
+
+### حالت وب‌سرور (index.php)
+فایل `index.php` را در دایرکتوری وب‌سرور خود قرار دهید و با دستور زیر اجرا کنید:
+
 ```bash
-# پیش‌نیازها
-apt update && apt install -y php php-curl php-xml php-dom
-
-# یا روی سیستم‌های دیگر
-# sudo apt install php php-curl php-xml php-dom
+php -S localhost:8000 -t .
 ```
 
-## استفاده
+سپس در مرورگر آدرس زیر را باز کنید:
 
-### وب‌سرور (index.php)
-فایل `index.php` را در دایرکتوری وب‌سرور خود قرار دهید (Apache/Nginx/PHP built-in server):
-
-```bash
-# با PHP built-in server
-php -S localhost:8000 -t /path/to/jina-reader-php
-
-# سپس در مرورگر:
+```
 http://localhost:8000/?url=https://example.com
 ```
 
-**API مستقیم:**
+یا از طریق API:
+
 ```bash
-curl "http://your-server.com/index.php?url=https://example.com"
+curl "http://localhost:8000/index.php?url=https://example.com"
 ```
 
-### خط فرمان (cli.php)
+### حالت خط فرمان (cli.php)
 ```bash
 php cli.php https://example.com
 ```
 
-## خروجی نمونه
+## 📄 نمونه خروجی
 ```
 Title: Example Domain
-
 URL Source: https://example.com/
-
 Published Time: Wed, 12 Aug 2026 20:15:57 GMT
-
 Markdown Content:
-This domain is for use in documentation examples without needing permission. Avoid use in operations.
-
-[Learn more](https://iana.org/domains/example)
+This domain is for use in documentation examples...
 ```
 
-## ساختار فایل‌ها
+## 📁 ساختار فایل‌ها
 ```
 jina-reader-php/
 ├── index.php    # وب‌سرور + فرم وب
@@ -62,5 +51,5 @@ jina-reader-php/
 └── README.md    # این فایل
 ```
 
-## لایسنس
+## 📜 لایسنس
 MIT - آزاد برای استفاده و تغییر
