@@ -32,13 +32,20 @@
 
   <div class="card">
     <form id="readerForm">
-      <label for="urlInput">آدرس صفحه وب</label>
-      <div class="input-group">
+      <div class="label-row">
+        <label for="urlInput">آدرس صفحه وب</label>
+        <button type="button" id="batchToggle" class="link-btn">🌐 چندتا با هم</button>
+      </div>
+      <div class="input-group" id="singleGroup">
         <input type="url" id="urlInput" placeholder="https://example.com" required autocomplete="url">
         <button type="submit" id="submitBtn">
           <span class="btn-text">تبدیل</span>
           <span class="btn-loading" style="display:none"><svg class="spinner" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg> در حال خواندن...</span>
         </button>
+      </div>
+      <div class="batch-group" id="batchGroup" style="display:none">
+        <textarea id="batchUrls" rows="5" placeholder="هر آدرس در یک خط وارد کنید..."></textarea>
+        <button type="button" id="batchSubmitBtn">⚡ تبدیل همه (موازی)</button>
       </div>
       <div class="history-chips" id="historyChips" style="display:none"></div>
     </form>
@@ -51,6 +58,8 @@
         <button class="action-btn" id="openBtn">🔗 لینک اصلی</button>
         <button class="action-btn" id="copyBtn">📋 کپی</button>
         <button class="action-btn" id="downloadBtn">⬇️ دانلود</button>
+        <button class="action-btn" id="pdfBtn">🖨 PDF</button>
+        <button class="action-btn" id="shareBtn">↗️ اشتراک</button>
       </div>
     </div>
     <div class="result-meta">
@@ -91,6 +100,14 @@
     </details>
   </div>
 
+  <div id="batchResultsSection" class="card" style="display:none">
+    <div class="batch-results-header">
+      <h2>📚 نتایج دسته‌ای</h2>
+      <button class="action-btn" id="batchDownloadBtn">⬇️ دانلود همه (ZIP)</button>
+    </div>
+    <div id="batchResults"></div>
+  </div>
+
   <div id="errorSection" class="card error-card" style="display:none">
     <span class="error-icon">⚠️</span>
     <p id="errorMessage"></p>
@@ -105,18 +122,21 @@
 <script>
 const $=id=>document.getElementById(id);
 const form=$('readerForm'),urlInput=$('urlInput'),submitBtn=$('submitBtn');
+const batchToggle=$('batchToggle'),batchGroup=$('batchGroup'),batchSubmitBtn=$('batchSubmitBtn'),batchUrls=$('batchUrls');
 const resultSection=$('resultSection'),errorSection=$('errorSection');
 const resultTitle=$('resultTitle'),resultUrl=$('resultUrl'),resultTime=$('resultTime'),resultStats=$('resultStats');
 const markdownOutput=$('markdownOutput'),rawMarkdown=$('rawMarkdown'),errorMessage=$('errorMessage');
-const openBtn=$('openBtn'),copyBtn=$('copyBtn'),downloadBtn=$('downloadBtn');
+const openBtn=$('openBtn'),copyBtn=$('copyBtn'),downloadBtn=$('downloadBtn'),pdfBtn=$('pdfBtn'),shareBtn=$('shareBtn');
 const themeToggle=$('themeToggle'),historyBtn=$('historyBtn'),historyChips=$('historyChips');
 const tocToggle=$('tocToggle'),tocPanel=$('tocPanel'),tocNav=$('tocNav');
 const searchBtn=$('searchBtn'),searchBar=$('searchBar'),searchInput=$('searchInput'),searchCount=$('searchCount'),searchClose=$('searchClose');
 const ttsBtn=$('ttsBtn'),fontMinus=$('fontMinus'),fontPlus=$('fontPlus');
 const progressBar=$('progressBar');
+const batchResultsSection=$('batchResultsSection'),batchResults=$('batchResults'),batchDownloadBtn=$('batchDownloadBtn');
 let currentUrl='';
 let tocItems=[];
 let speaking=false;
+let batchArticles=[];
 
 function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
 function escAttr(t){return esc(t).replace(/"/g,'&quot;');}
@@ -150,6 +170,15 @@ function renderHistory(){
   historyChips.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{urlInput.value=c.dataset.url;form.requestSubmit();});
 }
 historyBtn.onclick=()=>{historyChips.style.display=historyChips.style.display==='none'?'flex':'none';};
+
+const singleGroup=$('singleGroup');
+batchToggle.onclick=()=>{
+  const batchMode=batchGroup.style.display==='none';
+  singleGroup.style.display=batchMode?'none':'flex';
+  batchGroup.style.display=batchMode?'flex':'none';
+  batchToggle.textContent=batchMode?'☝️ تکی':'🌐 چندتا با هم';
+  if(batchMode)batchUrls.focus();
+};
 
 function inlineMd(t){
   let s=t;
@@ -327,6 +356,139 @@ downloadBtn.onclick=()=>{
   URL.revokeObjectURL(a.href);
 };
 openBtn.onclick=()=>{if(currentUrl)window.open(currentUrl,'_blank');};
+
+pdfBtn.onclick=()=>{
+  const w=window.open('','_blank');
+  if(!w){showError('مرورگر پنجره جدید را بست. اجازه popup بدهید.');return;}
+  const html=`<!DOCTYPE html><html dir="rtl" lang="fa"><head><meta charset="UTF-8"><title>${esc(resultTitle.textContent)}</title>
+  <style>body{font-family:Vazirmatn,Tahoma,sans-serif;max-width:800px;margin:0 auto;padding:2rem;line-height:1.8;color:#111}
+  h1,h2,h3{color:#0066aa}img{max-width:100%}code{background:#f0f0f0;padding:.15rem .4rem;border-radius:4px}
+  pre{background:#f6f6f6;padding:1rem;border-radius:8px;overflow-x:auto;direction:ltr;text-align:left}
+  table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:.4rem .6rem;text-align:left;direction:ltr}
+  a{color:#0066aa}.meta{color:#666;font-size:.85rem;border-bottom:1px solid #ddd;padding-bottom:1rem;margin-bottom:1rem}</style></head>
+  <body><h1>${esc(resultTitle.textContent)}</h1><p class="meta">${esc(currentUrl)}</p>${markdownOutput.innerHTML}</body></html>`;
+  w.document.write(html);w.document.close();
+  setTimeout(()=>{w.focus();w.print();},400);
+};
+
+shareBtn.onclick=async()=>{
+  const shareData={title:resultTitle.textContent,url:currentUrl||location.href,text:rawMarkdown.value.slice(0,300)};
+  try{
+    if(navigator.share){await navigator.share(shareData);}
+    else{await navigator.clipboard.writeText(currentUrl||location.href);shareBtn.textContent='✅ لینک کپی شد!';setTimeout(()=>shareBtn.textContent='↗️ اشتراک',2000);}
+  }catch(e){/* user cancelled */}
+};
+
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();urlInput.focus();urlInput.select();}
+  else if(e.key==='Escape'){if(searchBar.style.display!=='none'){searchClose.onclick();}}
+});
+
+function normalizeUrl(u){u=u.trim();if(!u)return'';if(!/^https?:\/\//i.test(u))u='https://'+u;return u;}
+async function fetchArticle(u){
+  const r=await fetch('https://r.jina.ai/'+u,{headers:{'Accept':'text/markdown','X-Return-Format':'markdown'}});
+  if(!r.ok)throw new Error('خطای سرور: '+r.status);
+  const t=await r.text();
+  if(!t||!t.trim())throw new Error('صفحه خالی بود.');
+  const clean=cleanJina(t);
+  if(!clean.trim())throw new Error('صفحه خالی بود.');
+  const titleMatch=t.match(/^Title:\s*(.+)$/m)||t.match(/^#\s+(.+)$/m);
+  return {title:titleMatch?stripMd(titleMatch[1].trim()):u,url:u,markdown:clean};
+}
+function renderBatch(){
+  if(!batchArticles.length){batchResultsSection.style.display='none';return;}
+  batchResultsSection.style.display='block';
+  batchResults.innerHTML=batchArticles.map((a,i)=>{
+    const ok=a.error?'':`<div class="batch-art-actions"><button class="tool-btn" data-copy="${i}">📋 کپی</button><button class="tool-btn" data-dl="${i}">⬇️ md</button></div>`;
+    return `<div class="batch-art ${a.error?'batch-art-err':''}">
+      <div class="batch-art-head"><span class="batch-art-idx">${i+1}</span><strong>${esc(a.error?'خطا':a.title)}</strong></div>
+      <div class="batch-art-url">${esc(a.url)}</div>
+      ${a.error?`<div class="batch-art-msg">${esc(a.error)}</div>`:ok}
+    </div>`;
+  }).join('');
+  batchResults.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>navigator.clipboard.writeText(batchArticles[+b.dataset.copy].markdown));
+  batchResults.querySelectorAll('[data-dl]').forEach(b=>{
+    b.onclick=()=>{
+      const a=batchArticles[+b.dataset.dl];
+      const bl=new Blob([a.markdown],{type:'text/markdown;charset=utf-8'});
+      const x=document.createElement('a');x.href=URL.createObjectURL(bl);x.download=slug(a.title)+'.md';x.click();URL.revokeObjectURL(x.href);
+    };
+  });
+}
+function storeZip(files){
+  const enc=new TextEncoder();
+  const parts=[];const central=[];let offset=0;
+  function crc32(buf){
+    let table=crc32.table;
+    if(!table){table=crc32.table=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?(c>>>1)^0xEDB88320:(c>>>1);table[n]=c>>>0;}}
+    let crc=0xFFFFFFFF;
+    for(let i=0;i<buf.length;i++)crc=(crc>>>8)^table[(crc^buf[i])&0xFF];
+    return (crc^0xFFFFFFFF)>>>0;
+  }
+  const now=new Date();
+  const dosTime=(now.getHours()<<11)|(now.getMinutes()<<5)|(now.getSeconds()>>1);
+  const dosDate=((now.getFullYear()-1980)<<9)|((now.getMonth()+1)<<5)|now.getDate();
+  files.forEach(f=>{
+    const name=enc.encode(f.name),data=enc.encode(f.content),crc=crc32(data);
+    const lh=new Uint8Array(30);
+    const dv=new DataView(lh.buffer);
+    dv.setUint32(0,0x04034b50,true);dv.setUint16(4,20,true);dv.setUint16(6,0x0800,true);
+    dv.setUint16(8,0,true);dv.setUint16(10,dosTime,true);dv.setUint16(12,dosDate,true);
+    dv.setUint32(14,crc,true);dv.setUint32(18,data.length,true);dv.setUint32(22,data.length,true);
+    dv.setUint16(26,name.length,true);dv.setUint16(28,0,true);
+    parts.push(lh,name,data);
+    const ch=new Uint8Array(46);
+    const cv=new DataView(ch.buffer);
+    cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);
+    cv.setUint16(8,0x0800,true);cv.setUint16(10,0,true);cv.setUint16(12,dosTime,true);cv.setUint16(14,dosDate,true);
+    cv.setUint32(16,crc,true);cv.setUint32(20,data.length,true);cv.setUint32(24,data.length,true);
+    cv.setUint16(28,name.length,true);cv.setUint16(30,0,true);cv.setUint16(32,0,true);cv.setUint16(34,0,true);cv.setUint16(36,0,true);
+    cv.setUint32(38,0,true);cv.setUint32(42,offset,true);
+    central.push(ch,name);offset+=lh.length+name.length+data.length;
+  });
+  const cenSize=central.reduce((s,c)=>s+c.length,0);
+  const end=new Uint8Array(22);
+  const ev=new DataView(end.buffer);
+  ev.setUint32(0,0x06054b50,true);ev.setUint16(4,0,true);ev.setUint16(6,0,true);
+  ev.setUint16(8,files.length,true);ev.setUint16(10,files.length,true);
+  ev.setUint32(12,cenSize,true);ev.setUint32(16,offset,true);ev.setUint16(20,0,true);
+  return new Blob([...parts,...central,end],{type:'application/zip'});
+}
+batchDownloadBtn.onclick=()=>{
+  const ok=batchArticles.filter(a=>!a.error);
+  if(!ok.length)return;
+  const used=new Set();
+  const files=ok.map(a=>{
+    let base=slug(a.title).slice(0,40)||'article';
+    let name=base+'.md',n=1;
+    while(used.has(name)){name=base+'-'+(n++)+'.md';}
+    used.add(name);
+    return {name:name,content:a.markdown};
+  });
+  const bl=storeZip(files);
+  const x=document.createElement('a');x.href=URL.createObjectURL(bl);x.download='jina-reader-articles.zip';x.click();URL.revokeObjectURL(x.href);
+};
+async function runBatch(urls){
+  setLoading(true);
+  batchResultsSection.style.display='block';
+  batchResults.innerHTML='<div class="batch-loading">⏳ در حال خواندن '+urls.length+' صفحه به صورت موازی...</div>';
+  batchArticles=await Promise.all(urls.map(async u=>{
+    try{const a=await fetchArticle(u);pushHistory(u);return a;}
+    catch(e){return {title:u,url:u,error:e.message||'خطای ناشناخته.'};}
+  }));
+  renderBatch();
+  setLoading(false);
+}
+batchSubmitBtn.onclick=e=>{
+  e.preventDefault();
+  const urls=batchUrls.value.split('\n').map(normalizeUrl).filter(Boolean);
+  if(!urls.length){showError('حداقل یک آدرس وارد کنید.');return;}
+  errorSection.style.display='none';resultSection.style.display='none';
+  runBatch(urls);
+};
+form.addEventListener('submit',e=>{
+  if(batchGroup.style.display!=='none'){e.preventDefault();batchSubmitBtn.onclick(e);}
+});
 
 const p=new URLSearchParams(window.location.search).get('url');
 if(p){urlInput.value=p;form.dispatchEvent(new Event('submit'));}
