@@ -1,55 +1,68 @@
-# Jina Reader
+# 📖 Jina Reader
 
-> Convert any web page to clean Markdown directly from your browser - no server needed!
+> Convert any webpage to clean Markdown instantly — no server needed.
 
-A lightweight, fully client-side tool for converting web pages to Markdown format, hosted on GitHub Pages.
-
-## Features
-
-- **No server needed** - Fully Client-Side, works on GitHub Pages
-- Modern dark UI with beautiful design
-- One-click copy to clipboard
-- Download output as .md file
-- Full UTF-8 support
-- Fast conversion via Jina Reader API
-- Responsive design for mobile and desktop
-
-## Usage
-
-### Online (GitHub Pages)
-
-**[Open Live Demo](https://anishtayin.github.io/jina-reader-php/)**
-
-1. Enter the URL of any web page
-2. Click the **Convert** button
-3. Copy or download the Markdown output!
-
-### Offline
-
-1. Download this repository
-2. Open index.html in any modern browser
-3. Done - no server or installation required!
-
-### Direct API
-
-You can also use the Jina Reader API directly:
-
-    GET https://r.jina.ai/YOUR_URL
-
-## Project Structure
-
-    jina-reader-php/
-    |-- index.html    # Main application (single-file SPA)
-    |-- README.md     # This file
-
-## How It Works
-
-The app uses the free Jina Reader API to fetch and convert web pages. Everything runs in your browser with zero server-side processing.
-
-## License
-
-MIT - free to use and modify.
+**[🌐 Live Demo](https://anishtayin.github.io/jina-reader-php)**
 
 ---
 
-Made with love by [AnishtayiN](https://github.com/AnishtayiN)
+## 🚀 Usage
+
+### Online
+1. Open **[Jina Reader](https://anishtayin.github.io/jina-reader-php)**
+2. Paste any webpage URL
+3. Click **Convert**
+4. Copy or download the Markdown output
+
+### Offline
+Download `index.html` and open it in any browser — works without a server.
+
+### Direct API
+Use the endpoint directly: `GET https://r.jina.ai/YOUR_URL`
+
+**Example:**
+```
+https://r.jina.ai/https://en.wikipedia.org/wiki/Persian_literature
+```
+
+**With curl:**
+```bash
+curl "https://r.jina.ai/https://example.com"
+```
+
+**With JavaScript:**
+```javascript
+fetch('https://r.jina.ai/https://example.com')
+  .then(r => r.text())
+  .then(markdown => console.log(markdown));
+```
+
+### Bookmarklet
+Save this as a bookmark to instantly convert any page:
+
+```javascript
+javascript:window.location='https://r.jina.ai/'+window.location.href
+```
+
+---
+
+## ✨ Features
+
+| Feature | Description |
+|---------|-------------|
+| ⚡ No hosting | Works on GitHub Pages, no server needed |
+| 📋 Quick copy | One-click copy output |
+| ⬇️ Download | Save output as .md file |
+| 📱 Responsive | Mobile and desktop friendly |
+| 🌙 Modern UI | Clean dark theme |
+| 🌍 RTL support | Full Persian & UTF-8 support |
+
+---
+
+## 📄 License
+
+MIT — free to use and modify.
+
+---
+
+Made with ❤️ by [AnishtayiN](https://github.com/AnishtayiN)
