@@ -1,1 +1,339 @@
-<!DOCTYPE html><html lang="fa" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Jina Reader</title><link rel="stylesheet" href="styles.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"></head><body><div class="container"><header><div class="logo"><span class="logo-icon">📖</span><h1>Jina Reader</h1></div><p class="subtitle">تبدیل هر صفحه وب به Markdown تمیز و خوانا</p></header><div class="card"><form id="readerForm"><label for="urlInput">آدرس صفحه وب</label><div class="input-group"><input type="url" id="urlInput" placeholder="https://example.com" required autocomplete="url"><button type="submit" id="submitBtn"><span class="btn-text">تبدیل</span><span class="btn-loading" style="display:none"><svg class="spinner" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg> در حال خواندن...</span></button></div></form></div><div id="resultSection" class="card result-card" style="display:none"><div class="result-header"><h2 id="resultTitle"></h2><div class="result-actions"><button class="action-btn" onclick="copyMarkdown()">📋 کپی</button><button class="action-btn" onclick="downloadMarkdown()">⬇️ دانلود</button></div></div><div class="result-meta"><span id="resultUrl"></span><span id="resultTime"></span></div><div class="markdown-preview" id="markdownOutput"></div><textarea id="rawMarkdown" class="raw-textarea" readonly></textarea></div><div id="errorSection" class="card error-card" style="display:none"><span class="error-icon">⚠️</span><p id="errorMessage"></p></div><footer><p>ساخته شده با ❤️ | قدرت‌گرفته از <a href="https://jina.ai/reader" target="_blank">Jina AI Reader</a></p><p><a href="https://github.com/AnishtayiN/jina-reader-php" target="_blank">📂 سورس‌کد</a></p></footer></div><script>const $=id=>document.getElementById(id);const form=$('readerForm'),urlInput=$('urlInput'),submitBtn=$('submitBtn');const resultSection=$('resultSection'),errorSection=$('errorSection');const resultTitle=$('resultTitle'),resultUrl=$('resultUrl'),resultTime=$('resultTime');const markdownOutput=$('markdownOutput'),rawMarkdown=$('rawMarkdown'),errorMessage=$('errorMessage');function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}function render(md){let h=esc(md);h=h.replace(/```(\w*)\n([\s\S]*?)```/g,'<pre><code>$2</code></pre>');h=h.replace(/`([^`]+)`/g,'<code>$1</code>');h=h.replace(/^### (.+)$/gm,'<h3>$1</h3>');h=h.replace(/^## (.+)$/gm,'<h2>$1</h2>');h=h.replace(/^# (.+)$/gm,'<h1>$1</h1>');h=h.replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>');h=h.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');h=h.replace(/\*(.+?)\*/g,'<em>$1</em>');h=h.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank">$1</a>');h=h.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img src="$2" alt="$1">');h=h.replace(/\n\n+/g,'</p><p>');h=h.replace(/\n/g,'<br>');return '<p>'+h+'</p>';}function setLoading(l){submitBtn.querySelector('.btn-text').style.display=l?'none':'inline';submitBtn.querySelector('.btn-loading').style.display=l?'inline-flex':'none';submitBtn.disabled=l;}function showError(m){resultSection.style.display='none';errorSection.style.display='flex';errorMessage.textContent=m;}function showResult(t,u,md){errorSection.style.display='none';resultSection.style.display='block';resultTitle.textContent=t||'بدون عنوان';resultUrl.textContent='🔗 '+u;resultTime.textContent='🕐 '+new Date().toLocaleString('fa-IR');markdownOutput.innerHTML=render(md);rawMarkdown.value=md;resultSection.scrollIntoView({behavior:'smooth'});}form.addEventListener('submit',async e=>{e.preventDefault();const u=urlInput.value.trim();if(!u)return;setLoading(true);resultSection.style.display='none';errorSection.style.display='none';try{const r=await fetch('https://r.jina.ai/'+u,{headers:{'Accept':'text/markdown','X-Return-Format':'markdown'}});if(!r.ok)throw new Error('خطای سرور: '+r.status);const t=await r.text();if(!t||!t.trim())throw new Error('صفحه خالی بود.');const m=t.match(/^#\s+(.+)$/m);showResult(m?m[1]:'',u,t);}catch(err){showError(err.message||'خطای ناشناخته.');}finally{setLoading(false);}});function copyMarkdown(){navigator.clipboard.writeText(rawMarkdown.value).then(()=>{const b=event.target.closest('.action-btn');const o=b.textContent;b.textContent='✅ کپی شد!';setTimeout(()=>b.textContent=o,2000);});}function downloadMarkdown(){const b=new Blob([rawMarkdown.value],{type:'text/markdown'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='article.md';a.click();URL.revokeObjectURL(a.href);}const p=new URLSearchParams(window.location.search).get('url');if(p){urlInput.value=p;form.dispatchEvent(new Event('submit'));}</script></body></html>
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Jina Reader — تبدیل وب به Markdown</title>
+<meta name="description" content="تبدیل هر صفحه وب به Markdown تمیز و خوانا">
+<meta name="theme-color" content="#0f0f23">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="styles.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="progressBar"></div>
+
+<div class="container">
+  <header>
+    <div class="topbar">
+      <button id="themeToggle" class="icon-btn" title="تغییر تم">🌙</button>
+      <button id="tocToggle" class="icon-btn" title="فهرست مطالب" style="display:none">📑</button>
+      <button id="historyBtn" class="icon-btn" title="تاریخچه">🕘</button>
+    </div>
+    <div class="logo">
+      <span class="logo-icon">📖</span>
+      <h1>Jina Reader</h1>
+    </div>
+    <p class="subtitle">تبدیل هر صفحه وب به Markdown تمیز و خوانا</p>
+  </header>
+
+  <div class="card">
+    <form id="readerForm">
+      <label for="urlInput">آدرس صفحه وب</label>
+      <div class="input-group">
+        <input type="url" id="urlInput" placeholder="https://example.com" required autocomplete="url">
+        <button type="submit" id="submitBtn">
+          <span class="btn-text">تبدیل</span>
+          <span class="btn-loading" style="display:none"><svg class="spinner" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="31.4 31.4" stroke-linecap="round"/></svg> در حال خواندن...</span>
+        </button>
+      </div>
+      <div class="history-chips" id="historyChips" style="display:none"></div>
+    </form>
+  </div>
+
+  <div id="resultSection" class="card result-card" style="display:none">
+    <div class="result-header">
+      <h2 id="resultTitle"></h2>
+      <div class="result-actions">
+        <button class="action-btn" id="openBtn">🔗 لینک اصلی</button>
+        <button class="action-btn" id="copyBtn">📋 کپی</button>
+        <button class="action-btn" id="downloadBtn">⬇️ دانلود</button>
+      </div>
+    </div>
+    <div class="result-meta">
+      <span id="resultUrl"></span>
+      <span id="resultTime"></span>
+      <span id="resultStats"></span>
+    </div>
+
+    <div class="reader-layout">
+      <aside class="toc-panel" id="tocPanel" style="display:none">
+        <div class="toc-title">📑 فهرست مطالب</div>
+        <nav id="tocNav"></nav>
+      </aside>
+
+      <div class="article-col">
+        <div class="article-toolbar">
+          <button class="tool-btn" id="searchBtn" title="جستجو در متن">🔍 جستجو</button>
+          <span class="tool-sep"></span>
+          <button class="tool-btn" id="ttsBtn" title="خواندن صوتی">🔊 خواندن</button>
+          <span class="tool-sep"></span>
+          <span class="font-group">
+            <button class="tool-btn" id="fontMinus" title="کوچک‌تر">A−</button>
+            <button class="tool-btn" id="fontPlus" title="بزرگ‌تر">A+</button>
+          </span>
+        </div>
+        <div class="search-bar" id="searchBar" style="display:none">
+          <input type="text" id="searchInput" placeholder="جستجو در متن...">
+          <span id="searchCount"></span>
+          <button class="tool-btn" id="searchClose">✕</button>
+        </div>
+        <article class="markdown-preview" id="markdownOutput"></article>
+      </div>
+    </div>
+
+    <details class="raw-wrap">
+      <summary>نمایش Markdown خام</summary>
+      <textarea id="rawMarkdown" class="raw-textarea" readonly></textarea>
+    </details>
+  </div>
+
+  <div id="errorSection" class="card error-card" style="display:none">
+    <span class="error-icon">⚠️</span>
+    <p id="errorMessage"></p>
+  </div>
+
+  <footer>
+    <p>ساخته شده با ❤️ | قدرت‌گرفته از <a href="https://jina.ai/reader" target="_blank">Jina AI Reader</a></p>
+    <p><a href="https://github.com/AnishtayiN/jina-reader-php" target="_blank">📂 سورس‌کد</a></p>
+  </footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const form=$('readerForm'),urlInput=$('urlInput'),submitBtn=$('submitBtn');
+const resultSection=$('resultSection'),errorSection=$('errorSection');
+const resultTitle=$('resultTitle'),resultUrl=$('resultUrl'),resultTime=$('resultTime'),resultStats=$('resultStats');
+const markdownOutput=$('markdownOutput'),rawMarkdown=$('rawMarkdown'),errorMessage=$('errorMessage');
+const openBtn=$('openBtn'),copyBtn=$('copyBtn'),downloadBtn=$('downloadBtn');
+const themeToggle=$('themeToggle'),historyBtn=$('historyBtn'),historyChips=$('historyChips');
+const tocToggle=$('tocToggle'),tocPanel=$('tocPanel'),tocNav=$('tocNav');
+const searchBtn=$('searchBtn'),searchBar=$('searchBar'),searchInput=$('searchInput'),searchCount=$('searchCount'),searchClose=$('searchClose');
+const ttsBtn=$('ttsBtn'),fontMinus=$('fontMinus'),fontPlus=$('fontPlus');
+const progressBar=$('progressBar');
+let currentUrl='';
+let tocItems=[];
+let speaking=false;
+
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
+function escAttr(t){return esc(t).replace(/"/g,'&quot;');}
+function stripMd(t){return t.replace(/[*_`~#]+/g,'').replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').replace(/&amp;/g,'&').trim();}
+function slug(t){return (t||'').replace(/[^\w\u0600-\u06FF]+/g,'-').replace(/^-+|-+$/g,'').slice(0,60)||'article';}
+function cleanJina(md){
+  let m=md;
+  m=m.replace(/^Title:[^\n]*\n/m,'');
+  m=m.replace(/^URL Source:[^\n]*\n/m,'');
+  m=m.replace(/^Published Time:[^\n]*\n/m,'');
+  m=m.replace(/^Markdown Content:\s*\n?/m,'');
+  return m.replace(/^\s+/,'');
+}
+
+function applyTheme(t){
+  document.documentElement.dataset.theme=t;
+  themeToggle.textContent=t==='dark'?'🌙':'☀️';
+  localStorage.setItem('jina-theme',t);
+}
+applyTheme(localStorage.getItem('jina-theme')||'dark');
+themeToggle.onclick=()=>applyTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
+
+const HKEY='jina-history';
+function getHistory(){try{return JSON.parse(localStorage.getItem(HKEY))||[]}catch(e){return[]}}
+function pushHistory(u){const h=[u,...getHistory().filter(x=>x!==u)].slice(0,6);localStorage.setItem(HKEY,JSON.stringify(h));renderHistory();}
+function renderHistory(){
+  const h=getHistory();
+  if(!h.length){historyChips.style.display='none';return;}
+  historyChips.style.display='flex';
+  historyChips.innerHTML='<span class="hint">آخرین‌ها:</span>'+h.map(u=>`<button type="button" class="chip" data-url="${escAttr(u)}">${esc(u)}</button>`).join('');
+  historyChips.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{urlInput.value=c.dataset.url;form.requestSubmit();});
+}
+historyBtn.onclick=()=>{historyChips.style.display=historyChips.style.display==='none'?'flex':'none';};
+
+function inlineMd(t){
+  let s=t;
+  s=s.replace(/`([^`]+)`/g,'<code>$1</code>');
+  s=s.replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>');
+  s=s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  s=s.replace(/\*(.+?)\*/g,'<em>$1</em>');
+  s=s.replace(/~~(.+?)~~/g,'<del>$1</del>');
+  s=s.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img src="$2" alt="$1" loading="lazy">');
+  s=s.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+  return s;
+}
+
+function render(md){
+  tocItems=[];
+  const codeBlocks=[];
+  let h=esc(md);
+  h=h.replace(/```(\w*)\n([\s\S]*?)```/g,function(_,lang,code){codeBlocks.push({lang:lang,code:code});return '\u0000C'+(codeBlocks.length-1)+'\u0000';});
+  h=h.replace(/(^\|.+\|[ \t]*$\n)(\|[\s:|-]+\|[ \t]*$\n)((?:^\|.+\|[ \t]*$\n?)+)/gm,function(m,head,sep,body){
+    const ths=head.replace(/^\||\|[ \t]*$/g,'').split('|').map(c=>`<th>${inlineMd(c.trim())}</th>`).join('');
+    const trs=body.trim().split('\n').map(r=>{const cs=r.replace(/^\||\|[ \t]*$/g,'').split('|');return '<tr>'+cs.map(c=>`<td>${inlineMd(c.trim())}</td>`).join('')+'</tr>';}).join('');
+    return '<div class="table-wrap"><table><thead><tr>'+ths+'</tr></thead><tbody>'+trs+'</tbody></table></div>';
+  });
+  h=h.replace(/^(#{1,3})\s+(.+)$/gm,function(m,hs,t){const lvl=hs.length;const id='sec-'+tocItems.length;tocItems.push({lvl:lvl,text:stripMd(t)});return `<h${lvl} id="${id}">${inlineMd(t)}</h${lvl}>`;});
+  h=h.replace(/^---+$/gm,'<hr>');
+  h=h.replace(/^&gt;\s*(.+)$/gm,'<blockquote>$1</blockquote>');
+  h=h.replace(/^(\s*)[-*+] \[([ xX])\]\s+(.+)$/gm,function(m,ws,chk,t){return ws+'<label class="task"><input type="checkbox" disabled'+(chk.toLowerCase()==='x'?' checked':'')+'>'+inlineMd(t)+'</label>';});
+  h=h.replace(/^(\s*)[-*+] (.+)$/gm,'$1<span class="li">• $2</span>');
+  h=h.replace(/^(\s*)(\d+)\. (.+)$/gm,'$1<span class="li">$2. $3</span>');
+  h=h.replace(/\n\n+/g,'</p><p>');
+  h=h.replace(/\n/g,'<br>');
+  h=h.replace(/\u0000C(\d+)\u0000/g,function(_,i){const b=codeBlocks[+i];return `<pre data-lang="${b.lang}"><code>${b.code}</code></pre>`;});
+  return '<p>'+h+'</p>';
+}
+
+function stats(md){
+  const words=md.trim().split(/\s+/).filter(Boolean).length;
+  const chars=md.length;
+  const min=Math.max(1,Math.round(words/200));
+  return `📊 ${words.toLocaleString('fa-IR')} کلمه · ${chars.toLocaleString('fa-IR')} کاراکتر · ⏱ ${min} دقیقه مطالعه`;
+}
+
+function renderToc(){
+  if(!tocItems.length){tocToggle.style.display='none';tocPanel.style.display='none';tocToggle.classList.remove('active');return;}
+  tocToggle.style.display='flex';
+  tocPanel.style.display='none';
+  tocToggle.classList.remove('active');
+  tocNav.innerHTML=tocItems.map((it,i)=>`<a href="#sec-${i}" data-target="sec-${i}" class="toc-item toc-${it.lvl}">${it.text}</a>`).join('');
+}
+tocNav.addEventListener('click',e=>{
+  const a=e.target.closest('a');if(!a)return;
+  e.preventDefault();
+  const el=document.getElementById(a.dataset.target);
+  if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+});
+tocToggle.onclick=()=>{
+  const hidden=tocPanel.style.display==='none';
+  tocPanel.style.display=hidden?'block':'none';
+  tocToggle.classList.toggle('active',hidden);
+};
+
+function clearHighlights(){
+  markdownOutput.querySelectorAll('.hl').forEach(s=>{const p=s.parentNode;p.replaceChild(document.createTextNode(s.textContent),s);p.normalize();});
+}
+searchBtn.onclick=()=>{
+  const hidden=searchBar.style.display==='none';
+  searchBar.style.display=hidden?'flex':'none';
+  if(hidden){searchInput.focus();}else{searchInput.value='';searchCount.textContent='';clearHighlights();}
+};
+searchClose.onclick=()=>{searchBar.style.display='none';searchInput.value='';searchCount.textContent='';clearHighlights();};
+searchInput.addEventListener('input',()=>{
+  clearHighlights();
+  const q=searchInput.value.trim();
+  if(!q){searchCount.textContent='';return;}
+  const walker=document.createTreeWalker(markdownOutput,NodeFilter.SHOW_TEXT);
+  const nodes=[];let n;
+  while(n=walker.nextNode())nodes.push(n);
+  let count=0;
+  nodes.forEach(node=>{
+    const t=node.nodeValue||'';
+    const idx=t.toLowerCase().indexOf(q.toLowerCase());
+    if(idx>=0){
+      count++;
+      const span=document.createElement('span');
+      span.className='hl';
+      span.textContent=t.substr(idx,q.length);
+      const rest=node.splitText(idx);
+      rest.splitText(q.length);
+      rest.parentNode.replaceChild(span,rest.previousSibling);
+    }
+  });
+  searchCount.textContent=count?count+' مورد':'یافت نشد';
+});
+
+function setSpeaking(s){speaking=s;ttsBtn.classList.toggle('active',s);ttsBtn.textContent=s?'⏹ توقف':'🔊 خواندن';}
+ttsBtn.onclick=()=>{
+  if(!('speechSynthesis' in window)){return;}
+  if(speaking){speechSynthesis.cancel();setSpeaking(false);return;}
+  const plain=stripMd(rawMarkdown.value).replace(/\n{2,}/g,'. ').replace(/\n/g,' ').replace(/\s{2,}/g,' ');
+  if(!plain){return;}
+  const u=new SpeechSynthesisUtterance(plain);
+  u.lang='fa-IR';u.rate=1;
+  u.onend=u.onerror=()=>setSpeaking(false);
+  setSpeaking(true);
+  speechSynthesis.speak(u);
+};
+
+let fontDelta=parseInt(localStorage.getItem('jina-font')||'0',10)||0;
+function applyFont(){markdownOutput.style.fontSize=(0.95+fontDelta*0.08)+'rem';localStorage.setItem('jina-font',fontDelta);}
+applyFont();
+fontMinus.onclick=()=>{fontDelta=Math.max(-3,fontDelta-1);applyFont();};
+fontPlus.onclick=()=>{fontDelta=Math.min(6,fontDelta+1);applyFont();};
+
+window.addEventListener('scroll',()=>{
+  const de=document.documentElement;
+  const p=de.scrollTop/((de.scrollHeight-de.clientHeight)||1);
+  progressBar.style.width=Math.min(100,p*100)+'%';
+},{passive:true});
+
+function setLoading(l){
+  submitBtn.querySelector('.btn-text').style.display=l?'none':'inline';
+  submitBtn.querySelector('.btn-loading').style.display=l?'inline-flex':'none';
+  submitBtn.disabled=l;
+}
+function showError(m){resultSection.style.display='none';errorSection.style.display='flex';errorMessage.textContent=m;}
+function showResult(t,u,md){
+  errorSection.style.display='none';
+  resultSection.style.display='block';
+  currentUrl=u;
+  resultTitle.textContent=t||'بدون عنوان';
+  resultUrl.textContent='🔗 '+u;
+  resultUrl.title=u;
+  resultTime.textContent='🕐 '+new Date().toLocaleString('fa-IR');
+  resultStats.textContent=stats(md);
+  markdownOutput.innerHTML=render(md);
+  renderToc();
+  rawMarkdown.value=md;
+  resultSection.scrollIntoView({behavior:'smooth'});
+  searchBar.style.display='none';searchInput.value='';searchCount.textContent='';clearHighlights();
+  setSpeaking(false);if('speechSynthesis' in window)speechSynthesis.cancel();
+}
+
+form.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const u=urlInput.value.trim();
+  if(!u)return;
+  setLoading(true);
+  resultSection.style.display='none';errorSection.style.display='none';
+  try{
+    const r=await fetch('https://r.jina.ai/'+u,{headers:{'Accept':'text/markdown','X-Return-Format':'markdown'}});
+    if(!r.ok)throw new Error('خطای سرور: '+r.status);
+    const t=await r.text();
+    if(!t||!t.trim())throw new Error('صفحه خالی بود.');
+    const clean=cleanJina(t);
+    if(!clean.trim())throw new Error('صفحه خالی بود.');
+    const titleMatch=t.match(/^Title:\s*(.+)$/m)||t.match(/^#\s+(.+)$/m);
+    showResult(titleMatch?stripMd(titleMatch[1].trim()):'',u,clean);
+    pushHistory(u);
+  }catch(err){
+    showError(err.message||'خطای ناشناخته.');
+  }finally{setLoading(false);}
+});
+
+copyBtn.onclick=async()=>{
+  await navigator.clipboard.writeText(rawMarkdown.value);
+  const o=copyBtn.textContent;copyBtn.textContent='✅ کپی شد!';
+  setTimeout(()=>copyBtn.textContent=o,2000);
+};
+downloadBtn.onclick=()=>{
+  const b=new Blob([rawMarkdown.value],{type:'text/markdown;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);
+  a.download=slug(resultTitle.textContent)+'.md';
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+openBtn.onclick=()=>{if(currentUrl)window.open(currentUrl,'_blank');};
+
+const p=new URLSearchParams(window.location.search).get('url');
+if(p){urlInput.value=p;form.dispatchEvent(new Event('submit'));}
+
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+
+renderHistory();
+</script>
+</body>
+</html>

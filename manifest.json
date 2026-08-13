@@ -1,0 +1,19 @@
+{
+  "name": "Jina Reader — تبدیل وب به Markdown",
+  "short_name": "JinaReader",
+  "description": "تبدیل هر صفحه وب به Markdown تمیز و خوانا",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0f0f23",
+  "theme_color": "#0f0f23",
+  "lang": "fa",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
