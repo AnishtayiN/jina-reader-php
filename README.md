@@ -1,63 +1,55 @@
-# Jina Reader - Web to Markdown
+# Jina Reader
 
-Convert any webpage to clean Markdown instantly - no server needed!
+> Convert any web page to clean Markdown directly from your browser - no server needed!
 
-**[Live Demo](https://anishtayin.github.io/jina-reader-php)**
-
----
+A lightweight, fully client-side tool for converting web pages to Markdown format, hosted on GitHub Pages.
 
 ## Features
 
-- Clean HTML to Markdown conversion
-- Full UTF-8 and Persian support
-- No server needed - fully client-side
+- **No server needed** - Fully Client-Side, works on GitHub Pages
+- Modern dark UI with beautiful design
 - One-click copy to clipboard
-- Download as .md file
-- Modern dark UI
-- Mobile responsive
-
----
+- Download output as .md file
+- Full UTF-8 support
+- Fast conversion via Jina Reader API
+- Responsive design for mobile and desktop
 
 ## Usage
 
-### Online
+### Online (GitHub Pages)
 
-Visit: **https://anishtayin.github.io/jina-reader-php**
+**[Open Live Demo](https://anishtayin.github.io/jina-reader-php/)**
 
-Enter URL and click Convert!
+1. Enter the URL of any web page
+2. Click the **Convert** button
+3. Copy or download the Markdown output!
 
 ### Offline
 
-1. Download `index.html`
-2. Open in any browser (Chrome, Firefox, Edge, ...)
-3. Enter URL and click Convert!
+1. Download this repository
+2. Open index.html in any modern browser
+3. Done - no server or installation required!
 
 ### Direct API
 
-Use Jina Reader API directly:
+You can also use the Jina Reader API directly:
 
-```
-GET https://r.jina.ai/YOUR_URL
-```
+    GET https://r.jina.ai/YOUR_URL
 
-Example:
-```
-https://r.jina.ai/https://en.wikipedia.org/wiki/Persian_literature
-```
+## Project Structure
 
----
+    jina-reader-php/
+    |-- index.html    # Main application (single-file SPA)
+    |-- README.md     # This file
 
-## Output
+## How It Works
 
-After conversion you can:
-- **Copy** to clipboard
-- **Download** as `article.md`
-- Use directly!
-
----
+The app uses the free Jina Reader API to fetch and convert web pages. Everything runs in your browser with zero server-side processing.
 
 ## License
 
-MIT - free to use and modify
+MIT - free to use and modify.
+
+---
 
 Made with love by [AnishtayiN](https://github.com/AnishtayiN)
