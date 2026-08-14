@@ -21,7 +21,10 @@
     <div class="topbar">
       <button id="themeToggle" class="icon-btn" title="تغییر تم">🌙</button>
       <button id="tocToggle" class="icon-btn" title="فهرست مطالب" style="display:none">📑</button>
+      <button id="bookmarksBtn" class="icon-btn" title="نشانک‌ها">⭐</button>
+      <button id="statsBtn" class="icon-btn" title="آمار مطالعه">📊</button>
       <button id="historyBtn" class="icon-btn" title="تاریخچه">🕘</button>
+      <button id="focusBtn" class="icon-btn" title="حالت تمرکز">🎯</button>
     </div>
     <div class="logo">
       <span class="logo-icon">📖</span>
@@ -48,6 +51,18 @@
         <button type="button" id="batchSubmitBtn">⚡ تبدیل همه (موازی)</button>
       </div>
       <div class="history-chips" id="historyChips" style="display:none"></div>
+      <div class="bookmarks-panel" id="bookmarksPanel" style="display:none">
+        <div class="bookmarks-header">
+          <span>⭐ نشانک‌ها</span>
+          <button class="link-btn" id="clearBookmarks">پاک کردن همه</button>
+        </div>
+        <input type="text" id="bookmarkSearch" placeholder="جستجو...">
+        <div id="bookmarksList"></div>
+      </div>
+      <div class="stats-panel" id="statsPanel" style="display:none">
+        <div class="stats-title">📊 آمار مطالعه</div>
+        <div id="statsContent"></div>
+      </div>
     </form>
   </div>
 
@@ -80,11 +95,18 @@
           <span class="tool-sep"></span>
           <button class="tool-btn" id="ttsBtn" title="خواندن صوتی">🔊 خواندن</button>
           <span class="tool-sep"></span>
+          <button class="tool-btn" id="tldrBtn" title="خلاصه هوشمند">🤖 TL;DR</button>
+          <span class="tool-sep"></span>
+          <button class="tool-btn" id="bookmarkBtn" title="نشانک‌گذاری">⭐ نشانک</button>
+          <span class="tool-sep"></span>
+          <button class="tool-btn" id="highlightBtn" title="هایلایت متن (انتخاب کنید)">🖍 هایلایت</button>
+          <span class="tool-sep"></span>
           <span class="font-group">
             <button class="tool-btn" id="fontMinus" title="کوچک‌تر">A−</button>
             <button class="tool-btn" id="fontPlus" title="بزرگ‌تر">A+</button>
           </span>
         </div>
+        <div id="tldrBox" class="tldr-box" style="display:none"></div>
         <div class="search-bar" id="searchBar" style="display:none">
           <input type="text" id="searchInput" placeholder="جستجو در متن...">
           <span id="searchCount"></span>
@@ -128,6 +150,10 @@ const resultTitle=$('resultTitle'),resultUrl=$('resultUrl'),resultTime=$('result
 const markdownOutput=$('markdownOutput'),rawMarkdown=$('rawMarkdown'),errorMessage=$('errorMessage');
 const openBtn=$('openBtn'),copyBtn=$('copyBtn'),downloadBtn=$('downloadBtn'),pdfBtn=$('pdfBtn'),shareBtn=$('shareBtn');
 const themeToggle=$('themeToggle'),historyBtn=$('historyBtn'),historyChips=$('historyChips');
+const bookmarksBtn=$('bookmarksBtn'),bookmarksPanel=$('bookmarksPanel'),clearBookmarks=$('clearBookmarks'),bookmarkSearch=$('bookmarkSearch'),bookmarksList=$('bookmarksList');
+const statsBtn=$('statsBtn'),statsPanel=$('statsPanel'),statsContent=$('statsContent');
+const focusBtn=$('focusBtn');
+const tldrBtn=$('tldrBtn'),bookmarkBtn=$('bookmarkBtn'),highlightBtn=$('highlightBtn'),tldrBox=$('tldrBox');
 const tocToggle=$('tocToggle'),tocPanel=$('tocPanel'),tocNav=$('tocNav');
 const searchBtn=$('searchBtn'),searchBar=$('searchBar'),searchInput=$('searchInput'),searchCount=$('searchCount'),searchClose=$('searchClose');
 const ttsBtn=$('ttsBtn'),fontMinus=$('fontMinus'),fontPlus=$('fontPlus');
@@ -156,7 +182,10 @@ function applyTheme(t){
   themeToggle.textContent=t==='dark'?'🌙':'☀️';
   localStorage.setItem('jina-theme',t);
 }
-applyTheme(localStorage.getItem('jina-theme')||'dark');
+const savedTheme=localStorage.getItem('jina-theme');
+if(savedTheme){applyTheme(savedTheme);}
+else if(window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches){applyTheme('light');}
+else{applyTheme('dark');}
 themeToggle.onclick=()=>applyTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
 
 const HKEY='jina-history';
@@ -319,6 +348,11 @@ function showResult(t,u,md){
   resultSection.scrollIntoView({behavior:'smooth'});
   searchBar.style.display='none';searchInput.value='';searchCount.textContent='';clearHighlights();
   setSpeaking(false);if('speechSynthesis' in window)speechSynthesis.cancel();
+  tldrBox.style.display='none';
+  const words=md.trim().split(/\s+/).filter(Boolean).length;
+  trackRead(words);
+  const b=getBookmarks();
+  bookmarkBtn.textContent=b.find(x=>x.url===u)?'★ نشانک‌شده':'⭐ نشانک';
 }
 
 form.addEventListener('submit',async e=>{
@@ -492,6 +526,112 @@ form.addEventListener('submit',e=>{
 
 const p=new URLSearchParams(window.location.search).get('url');
 if(p){urlInput.value=p;form.dispatchEvent(new Event('submit'));}
+
+// Bookmarks
+const BMKEY='jina-bookmarks';
+function getBookmarks(){try{return JSON.parse(localStorage.getItem(BMKEY))||[]}catch{return[]}}
+function saveBookmarks(b){localStorage.setItem(BMKEY,JSON.stringify(b));}
+function renderBookmarks(filter=''){
+  const b=getBookmarks();
+  const q=filter.toLowerCase();
+  const filtered=q?b.filter(x=>x.title.toLowerCase().includes(q)||x.url.toLowerCase().includes(q)||(x.note||'').toLowerCase().includes(q)):b;
+  if(!filtered.length){bookmarksList.innerHTML='<div class="bm-empty">نشانکی نیست.</div>';return;}
+  bookmarksList.innerHTML=filtered.map((x,i)=>`<div class="bm-item" data-idx="${b.indexOf(x)}">
+    <div class="bm-head"><strong>${esc(x.title)}</strong><button class="bm-del" data-del="${b.indexOf(x)}">✕</button></div>
+    <div class="bm-url">${esc(x.url)}</div>
+    ${x.note?`<div class="bm-note">${esc(x.note)}</div>`:''}
+    <div class="bm-date">${new Date(x.date).toLocaleDateString('fa-IR')}</div>
+  </div>`).join('');
+  bookmarksList.querySelectorAll('[data-idx]').forEach(el=>{
+    el.onclick=e=>{if(e.target.classList.contains('bm-del'))return;const x=b[+el.dataset.idx];urlInput.value=x.url;form.requestSubmit();};
+  });
+  bookmarksList.querySelectorAll('[data-del]').forEach(b=>b.onclick=e=>{e.stopPropagation();const bm=getBookmarks();bm.splice(+b.dataset.del,1);saveBookmarks(bm);renderBookmarks(bookmarkSearch.value);});
+}
+bookmarksBtn.onclick=()=>{
+  const show=bookmarksPanel.style.display==='none';
+  bookmarksPanel.style.display=show?'block':'none';
+  statsPanel.style.display='none';
+  if(show){renderBookmarks();bookmarkSearch.value='';bookmarkSearch.focus();}
+};
+clearBookmarks.onclick=()=>{if(confirm('همه نشانک‌ها پاک شوند؟')){saveBookmarks([]);renderBookmarks();}};
+bookmarkSearch.addEventListener('input',()=>renderBookmarks(bookmarkSearch.value));
+
+// Stats
+function updateStats(){
+  const s=JSON.parse(localStorage.getItem('jina-stats')||'{"count":0,"words":0,"mins":0}');
+  const b=getBookmarks().length;
+  statsContent.innerHTML=`
+    <div class="stat-row"><span>📚 مقالات خوانده‌شده:</span><strong>${s.count.toLocaleString('fa-IR')}</strong></div>
+    <div class="stat-row"><span>📝 کلمات خوانده‌شده:</span><strong>${s.words.toLocaleString('fa-IR')}</strong></div>
+    <div class="stat-row"><span>⏱ زمان مطالعه:</span><strong>${s.mins.toLocaleString('fa-IR')} دقیقه</strong></div>
+    <div class="stat-row"><span>⭐ نشانک‌ها:</span><strong>${b.toLocaleString('fa-IR')}</strong></div>
+  `;
+}
+function trackRead(words){
+  const s=JSON.parse(localStorage.getItem('jina-stats')||'{"count":0,"words":0,"mins":0}');
+  s.count++;s.words+=words;s.mins+=Math.max(1,Math.round(words/200));
+  localStorage.setItem('jina-stats',JSON.stringify(s));
+}
+statsBtn.onclick=()=>{
+  const show=statsPanel.style.display==='none';
+  statsPanel.style.display=show?'block':'none';
+  bookmarksPanel.style.display='none';
+  if(show)updateStats();
+};
+
+// Focus mode
+let focusMode=false;
+focusBtn.onclick=()=>{
+  focusMode=!focusMode;
+  document.body.classList.toggle('focus-mode',focusMode);
+  focusBtn.classList.toggle('active',focusMode);
+};
+
+// Bookmark current article
+bookmarkBtn.onclick=()=>{
+  if(!currentUrl)return;
+  const b=getBookmarks();
+  if(b.find(x=>x.url===currentUrl)){bookmarkBtn.textContent='⭐ نشانک';alert('این مقاله قبلاً نشانک شده.');return;}
+  const note=prompt('یادداشت اختیاری:');
+  b.unshift({title:resultTitle.textContent||'بدون عنوان',url:currentUrl,note:note||'',date:Date.now()});
+  saveBookmarks(b);
+  bookmarkBtn.textContent='✅ نشانک شد';
+  setTimeout(()=>bookmarkBtn.textContent='⭐ نشانک',2000);
+};
+
+// TL;DR with Jina
+tldrBtn.onclick=async()=>{
+  if(!currentUrl){alert('ابتدا یک مقاله بخوانید.');return;}
+  tldrBox.style.display='block';
+  tldrBox.innerHTML='<div class="tldr-loading">🤖 در حال تولید خلاصه...</div>';
+  try{
+    const r=await fetch('https://r.jina.ai/'+currentUrl,{headers:{'Accept':'application/json','X-Locale':'fa_IR','X-With-Links-Summary':'true','X-Return-Format':'text'}});
+    if(!r.ok)throw new Error('خطا');
+    const t=await r.text();
+    const summary=t.slice(0,800).replace(/\n+/g,'<br>');
+    tldrBox.innerHTML='<div class="tldr-title">🤖 خلاصه هوشمند</div><div class="tldr-text">'+summary+'...</div>';
+  }catch{tldrBox.innerHTML='<div class="tldr-err">خطا در تولید خلاصه.</div>';}
+};
+
+// Highlighter
+let highlightMode=false;
+highlightBtn.onclick=()=>{
+  highlightMode=!highlightMode;
+  highlightBtn.classList.toggle('active',highlightMode);
+  if(highlightMode)markdownOutput.style.cursor='text';
+  else markdownOutput.style.cursor='default';
+};
+markdownOutput.addEventListener('mouseup',()=>{
+  if(!highlightMode)return;
+  const sel=window.getSelection();
+  if(!sel.rangeCount||sel.isCollapsed)return;
+  const range=sel.getRangeAt(0);
+  if(!markdownOutput.contains(range.commonAncestorContainer))return;
+  const span=document.createElement('span');
+  span.className='user-hl';
+  try{range.surroundContents(span);}catch{}
+  sel.removeAllRanges();
+});
 
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
 
